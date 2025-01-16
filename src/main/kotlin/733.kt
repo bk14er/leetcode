@@ -1,12 +1,34 @@
 package org.mdu
 
-import kotlin.time.measureTime
-
+import kotlin.time.measureTimedValue
 
 //https://leetcode.com/problems/flood-fill/description/
 class Solution {
 
-    fun floodFill(image: Array<IntArray>, sr: Int, sc: Int, color: Int): Array<IntArray> {
+    fun floodFillDfs(image: Array<IntArray>, sr: Int, sc: Int, color: Int): Array<IntArray> {
+        val original = image[sr][sc]
+        val rowCount = image.size
+        val colCount = image[0].size
+
+        fun dsf(row: Int, col: Int) {
+            if (row < 0 || row >= rowCount || col < 0 || col >= colCount || image[row][col] != original || image[row][col] == color) {
+                return
+            }
+
+            image[row][col] = color
+
+            dsf(row - 1, col)
+            dsf(row + 1, col)
+            dsf(row, col - 1)
+            dsf(row, col + 1)
+        }
+
+        dsf(sr, sc)
+        return image
+    }
+
+
+    fun floodFillIterative(image: Array<IntArray>, sr: Int, sc: Int, color: Int): Array<IntArray> {
         val original = image[sr][sc]
 
         if (original == color) {
@@ -46,12 +68,24 @@ class Solution {
 fun main() {
     val solution = Solution()
 
-    // Input: image = [[1,1,1],[1,1,0],[1,0,1]], sr = 1, sc = 1, color = 2
-    // Output: [[2,2,2],[2,2,0],[2,0,1]]
-    solution.floodFill(
-        arrayOf(intArrayOf(1, 1, 1), intArrayOf(1, 1, 0), intArrayOf(1, 0, 1)),
-        1,
-        1,
-        2
-    ).joinToString("\n") { cell -> cell.joinToString(",") }.also(::println)
+    val input1 = { arrayOf(intArrayOf(1, 1, 1), intArrayOf(1, 1, 0), intArrayOf(1, 0, 1)).copyOf() }
+    val expected1 = arrayOf(intArrayOf(2, 2, 2), intArrayOf(2, 2, 0), intArrayOf(2, 0, 1))
+
+    execute(expected1, "floodFillDfs") {
+        solution.floodFillDfs(input1(), 1, 1, 2)
+    }
+
+    execute(expected1, "floodFillIterative") {
+        solution.floodFillIterative(input1(), 1, 1, 2)
+    }
 }
+
+fun execute(expected: Array<IntArray>, message: String, operation: () -> Array<IntArray>) =
+    measureTimedValue {
+        operation()
+    }.also {
+        it.duration.also { println("Execution time ${it.inWholeMilliseconds} [ms] of $message") }
+        it.value.joinToString("\n") { cell -> cell.joinToString(",") }.also(::println)
+    }.also {
+        assert(expected.contentEquals(it.value))
+    }
